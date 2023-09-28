@@ -1,0 +1,66 @@
+import machine, time
+try:
+    import urequests as requests
+except:
+    import requests
+import random
+import network
+import gc
+from machine import Pin, ADC
+from time import sleep
+
+pot = ADC(Pin(34))
+pot.atten(ADC.ATTN_11DB)       #Full range: 3.3v
+
+  
+def do_connect():
+    sta_if = network.WLAN(network.STA_IF)
+    if not sta_if.isconnected():
+        print('Connecting to network...')
+        sta_if.active(True)
+        sta_if.connect("HUAWEI-UtK2", 'FjFyt2w3')
+        while not sta_if.isconnected():
+            pass
+    print('Network config:', sta_if.ifconfig())
+
+do_connect()
+
+phone_number = '+923364068239'
+# Your callmebot API key
+api_key = '5915678'
+
+def send_message(phone_number, api_key, message):
+    # Set your host URL
+    url = 'https://api.callmebot.com/whatsapp.php?phone='+phone_number+'&text='+message+'&apikey='+api_key
+    try:
+        # Make the request to send a WhatsApp message
+        response = requests.get(url)
+        if response.status_code == 200:
+            print('WhatsApp message sent successfully!')
+        else:
+            print('Waiting for 10 second')
+        response.close()
+    except Exception as e:
+        print('Error occurred while sending WhatsApp message:', str(e))
+if __name__ == "__main__":
+    while True:
+        try:
+            pot_value = pot.read()
+            print(pot_value)
+            sleep(0.5)
+            if pot_value <10:
+                message = 'Someone%20has%20stolen%20the%20box'
+            elif pot_value <1000:
+                message = 'Someone%20is%20approaching%20your%20box'
+            elif pot_value <4000:
+                message = 'Someone%20has%20entered%20the%20room'
+            else:
+                message = 'Everything%20seems%20normal'
+            # Send a WhatsApp message
+            send_message(phone_number, api_key, message)
+            gc.collect()
+            time.sleep(2)  # Adjust the delay as needed
+        except KeyboardInterrupt:
+                break
+
+network.WLAN(network.STA_IF).disconnect()
